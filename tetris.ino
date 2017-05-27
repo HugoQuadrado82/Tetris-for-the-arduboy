@@ -9,23 +9,24 @@
 static Arduboy2 arduboy;
 ArduboyTones sound(arduboy.audio.enabled);
 
-int points[3] = {0,0,0};
-int songNum = 1;
-int boardWidth = 10;
-int boardHeight = 21;
-int gridWidth = 6.4;
-int gravSpeed = 1.2;
-int piecePivot[2] = {1,4};
-int currentMinoCoords[4][2] = {{},{},{},{}};
+uint8_t points[3] = {0,0,0};
+uint8_t songNum = 1;
+uint8_t boardWidth = 10;
+uint8_t boardHeight = 21;
+int gridWidth = 6;
+float gravSpeed = 1.2;
+uint8_t piecePivot[2] = {1,4};
+uint8_t currentMinoCoords[4][2] = {{},{},{},{}};
 char currentMino = 'o';
 char nextMino = 'o';
 bool showingNextPiece = false;
+bool muted = true;
 bool boardMap[21][10] = {{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}};
-int threeSec = ((((1000/60)*round(60/gravSpeed))*1.024)*3)/2;
-int twoSec = ((((1000/60)*round(60/gravSpeed))*1.024)*2)/2;
-int oneHalfSec = ((((1000/60)*round(60/gravSpeed))*1.024)*1.5)/2;
-int oneSec = (((1000/60)*round(60/gravSpeed))*1.024)/2;
-int halfSec = ((((1000/60)*round(60/gravSpeed))*1.024)/2)/2;
+uint16_t threeSec = ((((1000/60)*round(60/gravSpeed))*1.024)*3);
+uint16_t twoSec = ((((1000/60)*round(60/gravSpeed))*1.024)*2);
+uint16_t oneHalfSec = ((((1000/60)*round(60/gravSpeed))*1.024)*1.5);
+uint16_t oneSec = (((1000/60)*round(60/gravSpeed))*1.024);
+uint16_t halfSec = ((((1000/60)*round(60/gravSpeed))*1.024)/2);
 uint16_t tetrisThemeSong1[] = {
   659.25,oneSec, 493.88,halfSec, 523.25,halfSec, 587.33,oneSec, 523.25, halfSec, 493.88, halfSec, 440.00, oneSec, 440.00, halfSec, 523.25,halfSec, 659.25,oneSec,587.33,halfSec,523.25,halfSec,493.88,oneSec, 493.88,halfSec,523.25,halfSec,587.33,oneSec,659.25,oneSec,523.25,oneSec,440.00,oneSec,440.00,oneSec,0,oneSec,587.33,oneHalfSec,698.46,halfSec,880.00,oneSec,783.99,halfSec,698.46,halfSec,659.25,oneHalfSec,523.25,halfSec,659.25,oneSec,587.33,halfSec,523.25,halfSec,493.88,oneSec,493.88,halfSec,523.25,halfSec,587.33,oneSec,659.25,oneSec,523.25,oneSec,440.00,oneSec,440.00,oneSec,0,oneSec,
   TONES_END };
@@ -33,7 +34,7 @@ uint16_t tetrisThemeSong2[] = {
   329.63,twoSec,261.63,twoSec,293.66,twoSec,246.94,twoSec,261.63,twoSec,220.00,twoSec,207.65,twoSec,246.94,twoSec,329.63,twoSec,261.63,twoSec,293.66,twoSec,246.94,twoSec,261.63,oneSec,329.63,oneSec,440.00,twoSec,415.30,threeSec,0,oneSec,
   TONES_END };
 
-bool playMusic(float tempo){
+void playMusic(){
     threeSec = ((((1000/60)*round(60/gravSpeed))*1.024)*3)/2;
     twoSec = ((((1000/60)*round(60/gravSpeed))*1.024)*2)/2;
     oneHalfSec = ((((1000/60)*round(60/gravSpeed))*1.024)*1.5)/2;
@@ -54,8 +55,8 @@ bool playMusic(float tempo){
   };
 
 void clearBoard() {
-  for (int i=0; i < boardHeight; i++){
-      for (int j=0; j < boardWidth; j++){
+  for (uint8_t i=0; i < boardHeight; i++){
+      for (uint8_t j=0; j < boardWidth; j++){
             boardMap[i][j] = 0;
       };
     };
@@ -65,15 +66,15 @@ void rotatePiece(char dir) {
   if (currentMino!='o') {
   piecePivot[0] = currentMinoCoords[0][0];
   piecePivot[1] = currentMinoCoords[0][1];
-  int s = -1;
-  int c = 0;
-  for (int i=0; i < 4; i++){
+  int8_t s = -1;
+  uint8_t c = 0;
+  for (uint8_t i=0; i < 4; i++){
   currentMinoCoords[i][0] -= piecePivot[0];
   currentMinoCoords[i][1] -= piecePivot[1];
 
   // rotate point
-  int xnew = currentMinoCoords[i][0] * c - currentMinoCoords[i][1] * s;
-  int ynew = currentMinoCoords[i][0] * s + currentMinoCoords[i][1] * c;
+  uint8_t xnew = currentMinoCoords[i][0] * c - currentMinoCoords[i][1] * s;
+  uint8_t ynew = currentMinoCoords[i][0] * s + currentMinoCoords[i][1] * c;
 
   // translate point back:
   currentMinoCoords[i][0] = xnew + piecePivot[0];
@@ -83,14 +84,14 @@ void rotatePiece(char dir) {
 };
 
 void drawBoard() {
-   for (int i=0; i < boardHeight; i++){
-      for (int j=0; j < boardWidth; j++){
+   for (uint8_t i=0; i < boardHeight; i++){
+      for (uint8_t j=0; j < boardWidth; j++){
         if (boardMap[i][j]) {
             arduboy.drawRect((128-(6.4))-(i*gridWidth),1+(j*gridWidth),gridWidth,gridWidth,WHITE);
         };
       };
     };
-    for (int i=0; i < 4; i++){
+    for (uint8_t i=0; i < 4; i++){
       arduboy.drawRect((128-(6.4))-(currentMinoCoords[i][0]*gridWidth),1+(currentMinoCoords[i][1]*gridWidth),gridWidth,gridWidth,WHITE);
     };
     arduboy.drawFastVLine(0,0,61);
@@ -104,9 +105,9 @@ void drawBoard() {
     arduboy.display();
   };
 
-int addPoint(int amnt) {
+int addPoint(uint8_t amnt) {
   points[0]+=amnt;
-  gravSpeed += 1.0;
+  gravSpeed += 0.1;
   if (points[0]>=10) {
       points[1]+=(floor(points[0]/boardWidth));
       points[0]=points[0]%boardWidth;
@@ -118,7 +119,7 @@ int addPoint(int amnt) {
   };
 
 void getNextMino(bool first) {
-    switch (round(random(1,7))) {
+    switch (round(random(1,8))) {
       case 1:
         nextMino = 'i';
         if (first) currentMino = 'i';
@@ -144,8 +145,8 @@ void getNextMino(bool first) {
         if (first) currentMino = 'z';
       break;
       default:
-        nextMino = '0';
-        if (first) currentMino = '0';
+        nextMino = 'o';
+        if (first) currentMino = 'o';
       break;
       };
   }
@@ -225,8 +226,8 @@ void createPiece(char type) {
     };
   };
 
-bool isValidMove(int coords[4][2]) {
-    for (int i=0; i < 4; i++){
+bool isValidMove(uint8_t coords[4][2]) {
+    for (uint8_t i=0; i < 4; i++){
         if (boardMap[coords[i][0]][coords[i][1]] == 1) return false;
         if (coords[i][0] >= boardHeight) return false;
         if (coords[i][1] >= boardWidth) return false;
@@ -236,20 +237,20 @@ bool isValidMove(int coords[4][2]) {
   };
 
 void addPiece() {
-    for (int i=0; i < 4; i++){
+    for (uint8_t i=0; i < 4; i++){
       boardMap[currentMinoCoords[i][0]][currentMinoCoords[i][1]] = 1;
     };
   };
 
 void testRows() {
-    for (int i=0; i < boardHeight; i++) {
+    for (uint8_t i=0; i < boardHeight; i++) {
       if (isFull(i)) {removeRow(i);addPoint(1);};
       }
   };
 
-bool isFull(int row) {
-  int temp = 0;
-    for (int i=0; i < boardWidth; i++){
+bool isFull(uint8_t row) {
+  uint8_t temp = 0;
+    for (uint8_t i=0; i < boardWidth; i++){
           if (boardMap[row][i]) temp++;
         };
     if (temp >= boardWidth) return true;
@@ -266,13 +267,13 @@ void checkKeys() {
   if (arduboy.justPressed(UP_BUTTON)) updatePiece('l');
   }
 
-void removeRow(int row) {
-  int tempBoardMap[boardWidth] = {0,0,0,0,0,0,0,0,0,0};
-  int temp = 0;
-  int skipper = 0;
-  for (int i=0; i < boardHeight; i++){
+void removeRow(uint8_t row) {
+  bool tempBoardMap[boardWidth] = {0,0,0,0,0,0,0,0,0,0};
+  uint8_t temp = 0;
+  bool skipper = 0;
+  for (uint8_t i=0; i < boardHeight; i++){
     if (i == row) skipper++;
-    for (int j=0; j < boardWidth; j++){
+    for (uint8_t j=0; j < boardWidth; j++){
         temp = boardMap[i+skipper][j];
         boardMap[i][j] = tempBoardMap[j];
         tempBoardMap[j] = temp;
@@ -281,22 +282,22 @@ void removeRow(int row) {
   }
 
 void updatePiece(char dir) {
-    int next_currentMinoCoords[4][2] = {};
-    for (int i=0; i < 4; i++){
-      for (int j=0; j < 2; j++){
+    uint8_t next_currentMinoCoords[4][2] = {};
+    for (uint8_t i=0; i < 4; i++){
+      for (uint8_t j=0; j < 2; j++){
         next_currentMinoCoords[i][j]=currentMinoCoords[i][j];
       };
     };
     
     switch (dir) {
       case ('d'):
-        for (int i=0; i < 4; i++){
+        for (uint8_t i=0; i < 4; i++){
             boardMap[currentMinoCoords[i][0]][currentMinoCoords[i][1]] = 0;
             next_currentMinoCoords[i][0]=currentMinoCoords[i][0]+1;
         };
         if (isValidMove(next_currentMinoCoords)) {
-          for (int i=0; i < 4; i++){
-            for (int j=0; j < 2; j++){
+          for (uint8_t i=0; i < 4; i++){
+            for (uint8_t j=0; j < 2; j++){
               currentMinoCoords[i][j]=next_currentMinoCoords[i][j];
             };
           };
@@ -309,26 +310,26 @@ void updatePiece(char dir) {
         };
       break;
       case ('l'):
-        for (int i=0; i < 4; i++){
+        for (uint8_t i=0; i < 4; i++){
             boardMap[currentMinoCoords[i][0]][currentMinoCoords[i][1]] = 0;
             next_currentMinoCoords[i][1]=currentMinoCoords[i][1]-1;
         };
         if (isValidMove(next_currentMinoCoords)) {
-          for (int i=0; i < 4; i++){
-            for (int j=0; j < 2; j++){
+          for (uint8_t i=0; i < 4; i++){
+            for (uint8_t j=0; j < 2; j++){
               currentMinoCoords[i][j]=next_currentMinoCoords[i][j];
             };
           };
         };
       break;
       case ('r'):
-        for (int i=0; i < 4; i++){
+        for (uint8_t i=0; i < 4; i++){
             boardMap[currentMinoCoords[i][0]][currentMinoCoords[i][1]] = 0;
             next_currentMinoCoords[i][1]=currentMinoCoords[i][1]+1;
         };
         if (isValidMove(next_currentMinoCoords)) {
-          for (int i=0; i < 4; i++){
-            for (int j=0; j < 2; j++){
+          for (uint8_t i=0; i < 4; i++){
+            for (uint8_t j=0; j < 2; j++){
               currentMinoCoords[i][j]=next_currentMinoCoords[i][j];
             };
           };
@@ -343,7 +344,12 @@ void mainMenu() {
         arduboy.pollButtons();
         arduboy.clear();
         arduboy.drawRect(0,0,128,64,WHITE);
+        if (arduboy.justPressed(DOWN_BUTTON)) {arduboy.audio.off();muted = true;};
+        if (arduboy.justPressed(UP_BUTTON)) {arduboy.audio.on();muted = false;}
+        if (!muted) arduboy.drawTriangle(10,5,12,8,14,5);
+        if (muted) arduboy.drawTriangle(10,35,12,38,14,35);
         arduboy.display();
+        arduboy.idle();
       }
       arduboy.pollButtons();
       getNextMino(true);
@@ -378,14 +384,14 @@ void setup() {
   arduboy.clear();
   arduboy.setFrameRate(60);
   arduboy.initRandomSeed();
-  mainMenu();
-  arduboy.audio.on();
+  arduboy.audio.off();
   sound.volumeMode(VOLUME_ALWAYS_NORMAL);
-  playMusic(1.0);
+  mainMenu();
+  playMusic();
 };
 
 void loop() {
-  if (!sound.playing()) {songNum++;playMusic(gravSpeed);};
+  if (!sound.playing()) {songNum++;playMusic();};
   if (!arduboy.nextFrame()) {
     return;
   };
