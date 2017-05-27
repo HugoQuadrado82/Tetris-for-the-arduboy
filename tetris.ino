@@ -35,6 +35,7 @@ uint16_t tetrisThemeSong2[] = {
   TONES_END };
 
 void playMusic(){
+  if (!muted) {
     threeSec = ((((1000/60)*round(60/gravSpeed))*1.024)*3)/2;
     twoSec = ((((1000/60)*round(60/gravSpeed))*1.024)*2)/2;
     oneHalfSec = ((((1000/60)*round(60/gravSpeed))*1.024)*1.5)/2;
@@ -53,6 +54,7 @@ void playMusic(){
       break;
     };
   };
+  };
 
 void clearBoard() {
   for (uint8_t i=0; i < boardHeight; i++){
@@ -62,6 +64,7 @@ void clearBoard() {
     };
 };
 
+//i used simple point rotation for each piece and ploted the points as each part of the tetramino
 void rotatePiece(char dir) {
   if (currentMino!='o') {
   piecePivot[0] = currentMinoCoords[0][0];
@@ -83,6 +86,7 @@ void rotatePiece(char dir) {
   }
 };
 
+//draws the game to the screen, pretty simple
 void drawBoard() {
    for (uint8_t i=0; i < boardHeight; i++){
       for (uint8_t j=0; j < boardWidth; j++){
@@ -105,6 +109,7 @@ void drawBoard() {
     arduboy.display();
   };
 
+// since the screen is sidways, i plan to make a font and so by seperating the score into three seperate digits, putting the score on the screen will be much easier in the future
 int addPoint(uint8_t amnt) {
   points[0]+=amnt;
   gravSpeed += 0.1;
@@ -118,6 +123,7 @@ int addPoint(uint8_t amnt) {
     };
   };
 
+//just picks a random mino for either the first piece or the next piece
 void getNextMino(bool first) {
     switch (round(random(1,8))) {
       case 1:
@@ -151,6 +157,7 @@ void getNextMino(bool first) {
       };
   }
 
+//get the points for each type of tetramino
 void createPiece(char type) {
     switch (type) {
       case 'o':
@@ -226,6 +233,7 @@ void createPiece(char type) {
     };
   };
 
+//checks if the move is valid and returns the answer
 bool isValidMove(uint8_t coords[4][2]) {
     for (uint8_t i=0; i < 4; i++){
         if (boardMap[coords[i][0]][coords[i][1]] == 1) return false;
@@ -236,18 +244,21 @@ bool isValidMove(uint8_t coords[4][2]) {
     return true;
   };
 
+//overlay the piece on the board, i keep the board and the piece seperate until the piece lands
 void addPiece() {
     for (uint8_t i=0; i < 4; i++){
       boardMap[currentMinoCoords[i][0]][currentMinoCoords[i][1]] = 1;
     };
   };
 
+//test each row and returns which row is full
 void testRows() {
     for (uint8_t i=0; i < boardHeight; i++) {
       if (isFull(i)) {removeRow(i);addPoint(1);};
       }
   };
 
+//actually tests a row to see if it is full
 bool isFull(uint8_t row) {
   uint8_t temp = 0;
     for (uint8_t i=0; i < boardWidth; i++){
@@ -257,6 +268,7 @@ bool isFull(uint8_t row) {
     return false;
   };
 
+//just checks the keys and does what is needed accordingly
 void checkKeys() {
   arduboy.pollButtons();
   if (arduboy.pressed(LEFT_BUTTON)) updatePiece('d');
@@ -267,6 +279,7 @@ void checkKeys() {
   if (arduboy.justPressed(UP_BUTTON)) updatePiece('l');
   }
 
+//removes the row that is specified
 void removeRow(uint8_t row) {
   bool tempBoardMap[boardWidth] = {0,0,0,0,0,0,0,0,0,0};
   uint8_t temp = 0;
@@ -281,6 +294,7 @@ void removeRow(uint8_t row) {
     };
   }
 
+//moves a piece in the selected direction if possible
 void updatePiece(char dir) {
     uint8_t next_currentMinoCoords[4][2] = {};
     for (uint8_t i=0; i < 4; i++){
@@ -304,7 +318,7 @@ void updatePiece(char dir) {
         } else {
           addPiece();
           createPiece(nextMino);
-          if (!isValidMove(currentMinoCoords)) mainMenu();
+          if (!isValidMove(currentMinoCoords)) loseMenu();
           currentMino = nextMino;
           getNextMino(false);
         };
@@ -338,6 +352,7 @@ void updatePiece(char dir) {
     };
   };
 
+//displays the main menu
 void mainMenu() {
   arduboy.pollButtons();
     while(!arduboy.justPressed(B_BUTTON)) {
@@ -348,6 +363,15 @@ void mainMenu() {
         if (arduboy.justPressed(UP_BUTTON)) {arduboy.audio.on();muted = false;}
         if (!muted) arduboy.drawTriangle(10,5,12,8,14,5);
         if (muted) arduboy.drawTriangle(10,35,12,38,14,35);
+        //all this does is make an "O" lol
+        arduboy.drawPixel(11,11);
+        arduboy.drawPixel(12,11);
+        arduboy.drawPixel(11,14);
+        arduboy.drawPixel(12,14);
+        arduboy.drawPixel(13,12);
+        arduboy.drawPixel(13,13);
+        arduboy.drawPixel(10,12);
+        arduboy.drawPixel(10,13);
         arduboy.display();
         arduboy.idle();
       }
@@ -361,12 +385,14 @@ void mainMenu() {
       points[2] = 0;
   }
 
+//i will make the next piece seen when this function is called, not finished quite yet though
 void showNextPiece() {
     arduboy.fillRect(98,32,30,30,BLACK);
     arduboy.drawRect(98,32,30,30,WHITE);
     arduboy.display();
   };
 
+//pauses the game and displays the pause menu
 void pauseMenu() {
   arduboy.pollButtons();
     while(!arduboy.justPressed(B_BUTTON)) {
@@ -377,6 +403,32 @@ void pauseMenu() {
         arduboy.idle();
       }
       arduboy.pollButtons();
+  }
+
+//will show the losing screen
+void loseMenu() {
+  sound.noTone();
+  arduboy.pollButtons();
+    while(!arduboy.justPressed(B_BUTTON)) {
+        arduboy.pollButtons();
+        arduboy.clear();
+        arduboy.drawRect(0,0,128,64,WHITE);
+        if (arduboy.justPressed(DOWN_BUTTON)) {arduboy.audio.off();muted = true;};
+        if (arduboy.justPressed(UP_BUTTON)) {arduboy.audio.on();muted = false;}
+        if (!muted) arduboy.drawTriangle(10,5,12,8,14,5);
+        if (muted) arduboy.drawTriangle(10,35,12,38,14,35);
+        arduboy.print("LOSE_SCRN");
+        arduboy.display();
+        arduboy.idle();
+      }
+      arduboy.pollButtons();
+      getNextMino(true);
+      getNextMino(false);
+      createPiece(currentMino);
+      clearBoard();
+      points[0] = 0;
+      points[1] = 0;
+      points[2] = 0;
   }
 
 void setup() {
