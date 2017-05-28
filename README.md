@@ -9,7 +9,7 @@ I've always liked the song so i made sure that I included it.
 -Blocks!  
 -Scores!  
 -Tetris!  
--Competition Regulated Map size (for all those nerds that that matters to lol)  
+-Competition Map size (for all those nerds that that matters to lol)  
 
 (make sure you flip the arduboy 90 degrees)
 UP : rotate piece
