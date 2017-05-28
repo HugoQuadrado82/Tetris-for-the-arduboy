@@ -3,6 +3,7 @@
 #include <Arduboy2Core.h>
 #include <Sprites.h>
 #include <ArduboyTones.h>
+#include "glcdfont.c"
 
 #include "Arduboy2.h";
 
@@ -21,6 +22,7 @@ char currentMino = 'o';
 char nextMino = 'o';
 bool showingNextPiece = false;
 bool muted = true;
+uint8_t deletingRows[21] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 bool boardMap[21][10] = {{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}};
 uint16_t threeSec = ((((1000/60)*round(60/gravSpeed))*1.024)*3);
 uint16_t twoSec = ((((1000/60)*round(60/gravSpeed))*1.024)*2);
@@ -67,22 +69,33 @@ void clearBoard() {
 //i used simple point rotation for each piece and ploted the points as each part of the tetramino
 void rotatePiece(char dir) {
   if (currentMino!='o') {
+  uint8_t tempMinoCoords[4][2] = {{},{},{},{}};
   piecePivot[0] = currentMinoCoords[0][0];
   piecePivot[1] = currentMinoCoords[0][1];
+  for (uint8_t i=0; i < 4; i++){
+    tempMinoCoords[i][0] = currentMinoCoords[i][0];
+    tempMinoCoords[i][1] = currentMinoCoords[i][1];
+  }
   int8_t s = -1;
   uint8_t c = 0;
   for (uint8_t i=0; i < 4; i++){
-  currentMinoCoords[i][0] -= piecePivot[0];
-  currentMinoCoords[i][1] -= piecePivot[1];
+  tempMinoCoords[i][0] -= piecePivot[0];
+  tempMinoCoords[i][1] -= piecePivot[1];
 
   // rotate point
-  uint8_t xnew = currentMinoCoords[i][0] * c - currentMinoCoords[i][1] * s;
-  uint8_t ynew = currentMinoCoords[i][0] * s + currentMinoCoords[i][1] * c;
+  uint8_t xnew = tempMinoCoords[i][0] * c - tempMinoCoords[i][1] * s;
+  uint8_t ynew = tempMinoCoords[i][0] * s + tempMinoCoords[i][1] * c;
 
   // translate point back:
-  currentMinoCoords[i][0] = xnew + piecePivot[0];
-  currentMinoCoords[i][1] = ynew + piecePivot[1];
+  tempMinoCoords[i][0] = xnew + piecePivot[0];
+  tempMinoCoords[i][1] = ynew + piecePivot[1];
   }
+  if (isValidMove(tempMinoCoords)) {
+    for (uint8_t i=0; i < 4; i++){
+      currentMinoCoords[i][0] = tempMinoCoords[i][0];
+      currentMinoCoords[i][1] = tempMinoCoords[i][1];
+    }
+   }
   }
 };
 
@@ -92,6 +105,9 @@ void drawBoard() {
       for (uint8_t j=0; j < boardWidth; j++){
         if (boardMap[i][j]) {
             arduboy.drawRect((128-(6.4))-(i*gridWidth),1+(j*gridWidth),gridWidth,gridWidth,WHITE);
+          if ((deletingRows[i]>10 && deletingRows[i]<20)||(deletingRows[i]>30 && deletingRows[i]<40)) {
+            arduboy.fillRect((128-(6.4))-(i*gridWidth),1+(j*gridWidth),gridWidth,gridWidth,WHITE);
+          };
         };
       };
     };
@@ -101,10 +117,12 @@ void drawBoard() {
     arduboy.drawFastVLine(0,0,61);
     arduboy.drawFastHLine(0,0,128);
     arduboy.drawFastHLine(0,61,128);
-    arduboy.setCursor(45,0);
-    arduboy.print(points[2]);
-    arduboy.print(points[1]);
-    arduboy.print(points[0]);
+    drawChar_Rot90(127,14,scoreChar(2),WHITE,BLACK,1);
+    drawChar_Rot90(127,21,scoreChar(1),WHITE,BLACK,1);
+    drawChar_Rot90(127,28,scoreChar(0),WHITE,BLACK,1);
+    //a girl that i tutor complained that the points looked low to her, so i just added two zeros to the end lol
+    drawChar_Rot90(127,35,'0',WHITE,BLACK,1);
+    drawChar_Rot90(127,42,'0',WHITE,BLACK,1);
     if (showingNextPiece) showNextPiece();
     arduboy.display();
   };
@@ -161,73 +179,73 @@ void getNextMino(bool first) {
 void createPiece(char type) {
     switch (type) {
       case 'o':
-        currentMinoCoords[0][0] = 0;
+        currentMinoCoords[0][0] = 1;
         currentMinoCoords[0][1] = 4;
-        currentMinoCoords[1][0] = 1;
+        currentMinoCoords[1][0] = 2;
         currentMinoCoords[1][1] = 4;
-        currentMinoCoords[2][0] = 0;
+        currentMinoCoords[2][0] = 1;
+        currentMinoCoords[2][1] = 5;
+        currentMinoCoords[3][0] = 2;
+        currentMinoCoords[3][1] = 5;
+      break;
+      case 'l':
+        currentMinoCoords[0][0] = 2;
+        currentMinoCoords[0][1] = 4;
+        currentMinoCoords[1][0] = 2;
+        currentMinoCoords[1][1] = 3;
+        currentMinoCoords[2][0] = 2;
         currentMinoCoords[2][1] = 5;
         currentMinoCoords[3][0] = 1;
         currentMinoCoords[3][1] = 5;
       break;
-      case 'l':
-        currentMinoCoords[0][0] = 1;
-        currentMinoCoords[0][1] = 4;
-        currentMinoCoords[1][0] = 1;
-        currentMinoCoords[1][1] = 3;
-        currentMinoCoords[2][0] = 1;
-        currentMinoCoords[2][1] = 5;
-        currentMinoCoords[3][0] = 0;
-        currentMinoCoords[3][1] = 5;
-      break;
       case 'j':
-        currentMinoCoords[0][0] = 1;
+        currentMinoCoords[0][0] = 2;
         currentMinoCoords[0][1] = 4;
-        currentMinoCoords[1][0] = 1;
+        currentMinoCoords[1][0] = 2;
         currentMinoCoords[1][1] = 3;
-        currentMinoCoords[2][0] = 1;
+        currentMinoCoords[2][0] = 2;
         currentMinoCoords[2][1] = 5;
-        currentMinoCoords[3][0] = 0;
+        currentMinoCoords[3][0] = 1;
         currentMinoCoords[3][1] = 3;
       break;
       case 't':
-        currentMinoCoords[0][0] = 1;
+        currentMinoCoords[0][0] = 2;
         currentMinoCoords[0][1] = 4;
-        currentMinoCoords[1][0] = 1;
+        currentMinoCoords[1][0] = 2;
         currentMinoCoords[1][1] = 3;
-        currentMinoCoords[2][0] = 1;
+        currentMinoCoords[2][0] = 2;
         currentMinoCoords[2][1] = 5;
-        currentMinoCoords[3][0] = 0;
+        currentMinoCoords[3][0] = 1;
         currentMinoCoords[3][1] = 4;
       break;
       case 's':
-        currentMinoCoords[0][0] = 1;
+        currentMinoCoords[0][0] = 2;
         currentMinoCoords[0][1] = 4;
-        currentMinoCoords[1][0] = 0;
+        currentMinoCoords[1][0] = 1;
         currentMinoCoords[1][1] = 3;
-        currentMinoCoords[2][0] = 1;
+        currentMinoCoords[2][0] = 2;
         currentMinoCoords[2][1] = 5;
-        currentMinoCoords[3][0] = 0;
+        currentMinoCoords[3][0] = 1;
         currentMinoCoords[3][1] = 4;
       break;
       case 'z':
+        currentMinoCoords[0][0] = 2;
+        currentMinoCoords[0][1] = 4;
+        currentMinoCoords[1][0] = 2;
+        currentMinoCoords[1][1] = 3;
+        currentMinoCoords[2][0] = 1;
+        currentMinoCoords[2][1] = 5;
+        currentMinoCoords[3][0] = 1;
+        currentMinoCoords[3][1] = 4;
+      break;
+      case 'i':
         currentMinoCoords[0][0] = 1;
         currentMinoCoords[0][1] = 4;
         currentMinoCoords[1][0] = 1;
         currentMinoCoords[1][1] = 3;
-        currentMinoCoords[2][0] = 0;
+        currentMinoCoords[2][0] = 1;
         currentMinoCoords[2][1] = 5;
-        currentMinoCoords[3][0] = 0;
-        currentMinoCoords[3][1] = 4;
-      break;
-      case 'i':
-        currentMinoCoords[0][0] = 0;
-        currentMinoCoords[0][1] = 4;
-        currentMinoCoords[1][0] = 0;
-        currentMinoCoords[1][1] = 3;
-        currentMinoCoords[2][0] = 0;
-        currentMinoCoords[2][1] = 5;
-        currentMinoCoords[3][0] = 0;
+        currentMinoCoords[3][0] = 1;
         currentMinoCoords[3][1] = 6;
       break;
     };
@@ -254,7 +272,7 @@ void addPiece() {
 //test each row and returns which row is full
 void testRows() {
     for (uint8_t i=0; i < boardHeight; i++) {
-      if (isFull(i)) {removeRow(i);addPoint(1);};
+      if (isFull(i)) {getReadyToRemove(i);};
       }
   };
 
@@ -279,6 +297,11 @@ void checkKeys() {
   if (arduboy.justPressed(UP_BUTTON)) updatePiece('l');
   }
 
+void getReadyToRemove(uint8_t row) {
+  if (deletingRows[row]<40) deletingRows[row]++;
+  if (deletingRows[row]>=40) {removeRow(row);deletingRows[row]=0;}
+}
+
 //removes the row that is specified
 void removeRow(uint8_t row) {
   bool tempBoardMap[boardWidth] = {0,0,0,0,0,0,0,0,0,0};
@@ -292,6 +315,7 @@ void removeRow(uint8_t row) {
         tempBoardMap[j] = temp;
       };
     };
+  addPoint(1);
   }
 
 //moves a piece in the selected direction if possible
@@ -359,19 +383,20 @@ void mainMenu() {
         arduboy.pollButtons();
         arduboy.clear();
         arduboy.drawRect(0,0,128,64,WHITE);
+        drawChar_Rot90(24,16,'M',WHITE,BLACK,1);
+        drawChar_Rot90(24,23,'U',WHITE,BLACK,1);
+        drawChar_Rot90(24,30,'S',WHITE,BLACK,1);
+        drawChar_Rot90(24,37,'I',WHITE,BLACK,1);
+        drawChar_Rot90(24,44,'C',WHITE,BLACK,1);
+        drawChar_Rot90(15,40,'O',WHITE,BLACK,1);
+        drawChar_Rot90(15,47,'F',WHITE,BLACK,1);
+        drawChar_Rot90(15,54,'F',WHITE,BLACK,1);
+        drawChar_Rot90(15,10,'O',WHITE,BLACK,1);
+        drawChar_Rot90(15,17,'N',WHITE,BLACK,1);
         if (arduboy.justPressed(DOWN_BUTTON)) {arduboy.audio.off();muted = true;};
         if (arduboy.justPressed(UP_BUTTON)) {arduboy.audio.on();muted = false;}
         if (!muted) arduboy.drawTriangle(10,5,12,8,14,5);
         if (muted) arduboy.drawTriangle(10,35,12,38,14,35);
-        //all this does is make an "O" lol
-        arduboy.drawPixel(11,11);
-        arduboy.drawPixel(12,11);
-        arduboy.drawPixel(11,14);
-        arduboy.drawPixel(12,14);
-        arduboy.drawPixel(13,12);
-        arduboy.drawPixel(13,13);
-        arduboy.drawPixel(10,12);
-        arduboy.drawPixel(10,13);
         arduboy.display();
         arduboy.idle();
       }
@@ -399,10 +424,51 @@ void pauseMenu() {
         arduboy.pollButtons();
         arduboy.fillRect(50,5,20,54,BLACK);
         arduboy.drawRect(50,5,20,54,WHITE);
+        drawChar_Rot90(62,12,'P',WHITE,BLACK,1);
+        drawChar_Rot90(62,19,'A',WHITE,BLACK,1);
+        drawChar_Rot90(62,26,'U',WHITE,BLACK,1);
+        drawChar_Rot90(62,33,'S',WHITE,BLACK,1);
+        drawChar_Rot90(62,40,'E',WHITE,BLACK,1);
+        drawChar_Rot90(62,47,'D',WHITE,BLACK,1);
         arduboy.display();
         arduboy.idle();
       }
       arduboy.pollButtons();
+  }
+
+char scoreChar(uint8_t place) {
+    switch (points[place]) {
+      case 0:
+        return '0';
+      break;
+      case 1:
+        return '1';
+      break;
+      case 2:
+        return '2';
+      break;
+      case 3:
+        return '3';
+      break;
+      case 4:
+        return '4';
+      break;
+      case 5:
+        return '5';
+      break;
+      case 6:
+        return '6';
+      break;
+      case 7:
+        return '7';
+      break;
+      case 8:
+        return '8';
+      break;
+      case 9:
+        return '9';
+      break;
+     }
   }
 
 //will show the losing screen
@@ -413,23 +479,72 @@ void loseMenu() {
         arduboy.pollButtons();
         arduboy.clear();
         arduboy.drawRect(0,0,128,64,WHITE);
-        if (arduboy.justPressed(DOWN_BUTTON)) {arduboy.audio.off();muted = true;};
-        if (arduboy.justPressed(UP_BUTTON)) {arduboy.audio.on();muted = false;}
-        if (!muted) arduboy.drawTriangle(10,5,12,8,14,5);
-        if (muted) arduboy.drawTriangle(10,35,12,38,14,35);
-        arduboy.print("LOSE_SCRN");
+        drawChar_Rot90(120,8,'Y',WHITE,BLACK,1);
+        drawChar_Rot90(120,14,'O',WHITE,BLACK,1);
+        drawChar_Rot90(120,20,'U',WHITE,BLACK,1);
+        drawChar_Rot90(120,28,'L',WHITE,BLACK,1);
+        drawChar_Rot90(120,34,'O',WHITE,BLACK,1);
+        drawChar_Rot90(120,40,'S',WHITE,BLACK,1);
+        drawChar_Rot90(120,46,'E',WHITE,BLACK,1);
+        drawChar_Rot90(120,52,'!',WHITE,BLACK,1);
+        drawChar_Rot90(100,14,'S',WHITE,BLACK,1);
+        drawChar_Rot90(100,21,'C',WHITE,BLACK,1);
+        drawChar_Rot90(100,28,'O',WHITE,BLACK,1);
+        drawChar_Rot90(100,35,'R',WHITE,BLACK,1);
+        drawChar_Rot90(100,42,'E',WHITE,BLACK,1);
+        drawChar_Rot90(100,47,':',WHITE,BLACK,1);
+        drawChar_Rot90(90,14,scoreChar(2),WHITE,BLACK,1);
+        drawChar_Rot90(90,21,scoreChar(1),WHITE,BLACK,1);
+        drawChar_Rot90(90,28,scoreChar(0),WHITE,BLACK,1);
+        drawChar_Rot90(90,35,'0',WHITE,BLACK,1);
+        drawChar_Rot90(90,42,'0',WHITE,BLACK,1);
         arduboy.display();
         arduboy.idle();
       }
-      arduboy.pollButtons();
-      getNextMino(true);
-      getNextMino(false);
-      createPiece(currentMino);
-      clearBoard();
-      points[0] = 0;
-      points[1] = 0;
-      points[2] = 0;
+      mainMenu();
   }
+
+void drawChar_Rot90
+(int16_t x, int16_t y, unsigned char c, uint8_t color, uint8_t bg, uint8_t size)
+{
+  boolean draw_background = bg != color;
+
+  if ((x > WIDTH) ||              // Clip right   ;this line is modified
+    (y > (HEIGHT + 5 * size)) ||  // Clip bottom  ;this line is modified
+    ((x - 8 * size - 1) < 0) ||   // Clip left    ;this line is modified
+    ((y + 5 * size - 1) < 0)      // Clip top     ;this line is modified
+  )
+  {
+    return;
+  }
+
+  for (int8_t i=0; i<6; i++ )
+  {
+    uint8_t line;
+    if (i == 5)
+    {
+      line = 0x0;
+    }
+    else
+    {
+      line = pgm_read_byte(font+(c*5)+i);
+    }
+
+    for (int8_t j = 0; j<8; j++)
+    {
+      uint8_t draw_color = (line & 0x1) ? color : bg;
+
+      if (draw_color || draw_background) {
+        for (uint8_t a = 0; a < size; a++ ) {
+          for (uint8_t b = 0; b < size; b++ ) {
+            arduboy.drawPixel( x - (j * size) - b, y + (i * size) + a, draw_color); //  this line is modified
+          }
+        }
+      }
+      line >>= 1;
+    }
+  }
+}
 
 void setup() {
   arduboy.begin();
@@ -443,7 +558,7 @@ void setup() {
 };
 
 void loop() {
-  if (!sound.playing()) {songNum++;playMusic();};
+  if (!sound.playing()&&!muted) {songNum++;playMusic();};
   if (!arduboy.nextFrame()) {
     return;
   };
