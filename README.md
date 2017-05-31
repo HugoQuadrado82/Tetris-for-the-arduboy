@@ -13,13 +13,14 @@ Contact me if you have any questions or comments! Id love to tell you all about 
 -Tetris!  
 -Competition Map size (for all those nerds that that matters to lol)  
 
-(make sure you flip the arduboy 90 degrees first, its a vertical layout game)
-UP : rotate piece
-LEFT/RIGHT : move to the left or right
-LEFT && RIGHT : Pause (A button to unpause (an accident tbh))
-DOWN : speed up the dropping time
-A BUTTON : show the next piece (Right side) and the piece in the bank (Left side)
-B BUTTON : trade a piece with the bank (for use later (you start with a square piece in the bank (by accident really)))
+Controls:  
+(make sure you flip the arduboy 90 degrees first, its a vertical layout game)  
+UP : rotate piece  
+LEFT/RIGHT : move to the left or right  
+LEFT && RIGHT : Pause (A button to unpause (an accident tbh))  
+DOWN : speed up the dropping time  
+A BUTTON : show the next piece (Right side) and the piece in the bank (Left side)  
+B BUTTON : trade a piece with the bank (for use later (you start with a square piece in the bank (by accident really)))  
 
 To Do:  
 -I'm going to comment the code all over  
